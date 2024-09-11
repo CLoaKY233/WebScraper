@@ -1,0 +1,53 @@
+# Common ignores
+.DS_Store
+.idea/
+.vscode/
+
+# Python ignores (for Scrape_with_Python)
+Scrape_with_Python/__pycache__/
+Scrape_with_Python/*.py[cod]
+Scrape_with_Python/*$py.class
+Scrape_with_Python/.env
+Scrape_with_Python/.venv
+Scrape_with_Python/env/
+Scrape_with_Python/venv/
+Scrape_with_Python/ENV/
+Scrape_with_Python/env.bak/
+Scrape_with_Python/venv.bak/
+Scrape_with_Python/*.log
+Scrape_with_Python/.pytest_cache/
+Scrape_with_Python/htmlcov/
+Scrape_with_Python/.tox/
+Scrape_with_Python/.coverage
+Scrape_with_Python/.coverage.*
+Scrape_with_Python/coverage.xml
+Scrape_with_Python/*.cover
+
+# Rust ignores (for Scrape_with_Rust)
+Scrape_with_Rust/target/
+Scrape_with_Rust/Cargo.lock
+Scrape_with_Rust/**/*.rs.bk
+Scrape_with_Rust/*.pdb
+
+# Ignore any compiled files or build directories in both projects
+**/build/
+**/dist/
+**/*.exe
+**/*.dll
+**/*.so
+**/*.dylib
+
+# Ignore any local configuration files that shouldn't be shared
+**/config.local.json
+**/settings.local.yaml
+
+# Ignore any temporary files
+**/tmp/
+**/temp/
+
+# Ignore any log files
+**/*.log
+
+# Ignore any database files
+**/*.db
+**/*.sqlite

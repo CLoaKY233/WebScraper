@@ -1,0 +1,11 @@
+[package]
+name = "Scrape_with_Rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+reqwest = { version = "*", features = ["json", "gzip"] }
+tokio = { version = "*", features = ["full"] }
+scraper = "*"
+encoding_rs = "*"
+csv="*"
