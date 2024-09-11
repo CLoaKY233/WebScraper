@@ -11,7 +11,7 @@ This Python script efficiently scrapes product information from Amazon India bas
 1. Clone and navigate to the repository:
    ```
    git clone https://github.com/CLoaKY233/WebScraper.git
-   cd Scrape_with_rust
+   cd Scrape_with_Python
    ```
 
 2. Install uv (if not already installed):
@@ -78,7 +78,7 @@ This high-performance Rust program concurrently scrapes product information from
 2. Clone and navigate to the repository:
    ```
    git clone https://github.com/CLoaKY233/WebScraper.git
-   cd Scrape_with_rust
+   cd Scrape_with_Rust
    ```
 
 3. Build the project:
