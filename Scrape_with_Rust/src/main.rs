@@ -8,6 +8,7 @@ use std::sync::Arc;
 use std::time::Instant;
 use tokio;
 
+// Struct to hold product information
 #[derive(Debug, Serialize)]
 struct Product {
     title: String,
@@ -16,6 +17,7 @@ struct Product {
     review_count: u32,
 }
 
+// Struct to hold CSS selectors
 struct Selectors {
     prod: Selector,
     title: Selector,
@@ -24,38 +26,46 @@ struct Selectors {
     review_count: Selector,
 }
 
-async fn fetch_page(url: &str, client: Client, sel: Arc<Selectors>) -> Vec<Product> {
-    let mut products: Vec<Product> = Vec::new();
+// Function to fetch and parse a single page
+async fn fetch_page(
+    thread_num: &u32,
+    url: &str,
+    client: Client,
+    sel: Arc<Selectors>,
+) -> Vec<Product> {
+    let mut products = Vec::new();
+
+    // Fetch the page
     let response = match client
         .get(url)
         .header(reqwest::header::USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
         .header(reqwest::header::ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
         .header(reqwest::header::ACCEPT_LANGUAGE, "en-US,en;q=0.5")
         .send()
-        .await{
+        .await {
             Ok(response) => response,
             Err(e) => {
-                println!("Error: {}", e);
+                eprintln!("Error fetching page: {}", e);
                 return products;
             }
         };
 
-    println!("Status: {}", response.status());
-    // println!("Headers: {:#?}", response.headers());
+    // println!("Status: {}", response.status());
+    // not printing for spam
 
+    // Get the HTML content
     let body = match response.text().await {
         Ok(body) => body,
         Err(e) => {
-            println!("Error: {}", e);
+            eprintln!("Error reading response body: {}", e);
             return products;
         }
     };
 
     let document = Html::parse_document(&body);
 
-    let html_products = document.select(&sel.prod);
-
-    for product in html_products {
+    // Extract product information
+    for product in document.select(&sel.prod) {
         let title = product
             .select(&sel.title)
             .next()
@@ -105,18 +115,23 @@ async fn fetch_page(url: &str, client: Client, sel: Arc<Selectors>) -> Vec<Produ
             review_count,
         });
     }
-    return products;
+    println!("thread {} finished", thread_num);
+    products
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = Arc::new(Client::builder().gzip(true).build()?);
-    //user input product
-    let product_name = readinputstr("Enter the product name: ");
-    let total_pages = readinputstr("Enter the total pages: ");
-    let print_output = readinputbool("Do you want to print the output (y/n): ");
+
+    // Get user input
+    let product_name = read_input_str("Enter the product name: ");
+    let total_pages: u32 = read_input_str("Enter the total pages: ").parse()?;
+    let print_output = read_input_bool("Do you want to print the output (y/n): ");
+
     let start = Instant::now();
-    let mut all_products: Vec<Product> = Vec::new();
+    let mut all_products = Vec::new();
+
+    // Initialize selectors
     let selectors = Arc::new(Selectors {
         prod: Selector::parse("div[data-component-type='s-search-result']").unwrap(),
         title: Selector::parse("h2 span.a-text-normal").unwrap(),
@@ -124,28 +139,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         rating: Selector::parse("span.a-icon-alt").unwrap(),
         review_count: Selector::parse("span.a-size-base").unwrap(),
     });
-    let page_num: u32 = total_pages.parse().expect("Please enter a valid number");
-    let mut tasks = Vec::with_capacity(page_num as usize);
-    for i in 1..=page_num {
-        let url = format!("https://www.amazon.in/s?k={}&page={}", product_name, i);
-        println!("Fetching data from: {}", url);
 
+    // Create tasks for each page
+    let mut tasks = Vec::with_capacity(total_pages as usize);
+    println!("Fetching data from Amazon.in");
+    println!("creating {} threads for {} pages", total_pages, total_pages);
+    for i in 1..=total_pages {
+        let url = format!("https://www.amazon.in/s?k={}&page={}", product_name, i);
         let client = Arc::clone(&client);
         let selectors = Arc::clone(&selectors);
 
         let task =
-            tokio::spawn(async move { fetch_page(&url, (*client).clone(), selectors).await });
+            tokio::spawn(async move { fetch_page(&i, &url, (*client).clone(), selectors).await });
         tasks.push(task);
     }
 
+    // Execute all tasks concurrently
     let results = join_all(tasks).await;
     for result in results {
         match result {
             Ok(products) => all_products.extend(products),
-            Err(e) => println!("Error in task: {:?}", e),
+            Err(e) => eprintln!("Error in task: {:?}", e),
         }
     }
 
+    // Print output if requested
     if print_output {
         for product in &all_products {
             println!("Title: {}", product.title);
@@ -156,50 +174,45 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    let file = File::create("OutDir/output.csv")?;
+    // Write data to CSV file
+    println!("Writing data to file");
+    let mut prod_name = product_name.replace(" ", "_");
+    prod_name = format!("{}.csv", prod_name);
+    let file = File::create(prod_name)?;
     let mut wtr = csv::WriterBuilder::new()
         .quote_style(csv::QuoteStyle::Always)
         .from_writer(file);
+
     for product in &all_products {
         wtr.serialize(product)?;
     }
-    match wtr.flush() {
-        Ok(_) => {
-            println!("Data written to file");
-            let duration = start.elapsed();
-            println!("Time elapsed: {:?}", duration);
-        }
-        Err(e) => println!("Error writing to file: {}", e),
-    };
+
+    wtr.flush()?;
+    println!("Data written to file");
+
+    let duration = start.elapsed();
+    println!("Time elapsed: {:?}", duration);
 
     Ok(())
 }
 
-fn readinputstr(inputline: &str) -> String {
-    print!("{}", inputline);
-    match stdout().flush() {
-        Ok(_) => (),
-        Err(e) => println!("Error: {}", e),
-    }; // Flush the buffer
+// Helper function to read string input
+fn read_input_str(prompt: &str) -> String {
+    print!("{}", prompt);
+    stdout().flush().unwrap();
     let mut input = String::new();
     stdin().read_line(&mut input).unwrap();
     input.trim().to_string()
 }
 
-fn readinputbool(inputline: &str) -> bool {
-    print!("{}", inputline);
-    match stdout().flush() {
-        Ok(_) => (),
-        Err(e) => println!("Error: {}", e),
-    }; // Flush the buffer
-    let mut input = String::new();
-    stdin().read_line(&mut input).unwrap();
-    if input.trim().to_string() == "y" {
-        return true;
-    } else if input.trim().to_string() == "n" {
-        return false;
-    } else {
-        readinputbool(inputline);
+// Helper function to read boolean input
+fn read_input_bool(prompt: &str) -> bool {
+    loop {
+        let input = read_input_str(prompt).to_lowercase();
+        match input.as_str() {
+            "y" => return true,
+            "n" => return false,
+            _ => println!("Please enter 'y' or 'n'"),
+        }
     }
-    false
 }
