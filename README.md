@@ -8,20 +8,25 @@ This Python script efficiently scrapes product information from Amazon India bas
 - [uv](https://github.com/astral-sh/uv) (recommended) or pip
 
 ## Installation
+1. Clone and navigate to the repository:
+   ```
+   git clone https://github.com/CLoaKY233/WebScraper.git
+   cd Scrape_with_rust
+   ```
 
-1. Install uv (if not already installed):
+2. Install uv (if not already installed):
    ```
    pip install uv
    ```
 
-2. Create and activate a virtual environment:
+3. Create and activate a virtual environment:
    ```
    uv venv
    source .venv/bin/activate  # On Unix or MacOS
    .venv\Scripts\activate  # On Windows
    ```
 
-3. Install dependencies:
+4. Install dependencies:
    ```
    uv pip install -r requirements.txt
    ```
@@ -72,8 +77,8 @@ This high-performance Rust program concurrently scrapes product information from
 
 2. Clone and navigate to the repository:
    ```
-   git clone https://github.com/your-username/amazon-scraper-rust.git
-   cd amazon-scraper-rust
+   git clone https://github.com/CLoaKY233/WebScraper.git
+   cd Scrape_with_rust
    ```
 
 3. Build the project:
