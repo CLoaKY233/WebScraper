@@ -9,3 +9,4 @@ tokio = { version = "*", features = ["full"] }
 scraper = "*"
 encoding_rs = "*"
 csv="*"
+serde = { version = "1.0", features = ["derive"] }
