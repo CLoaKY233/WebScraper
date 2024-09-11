@@ -1,8 +1,8 @@
 import random
 import time
-import pandas as pd
-import requests
-from bs4 import BeautifulSoup
+import pandas as pd # type:ignore
+import requests # type:ignore
+from bs4 import BeautifulSoup # type:ignore
 
 def scrape_amazon(search_term, num_pages=1):
     base_url = "https://www.amazon.in/s?k="
@@ -44,7 +44,7 @@ def scrape_amazon(search_term, num_pages=1):
             all_products.append(product_data)
 
         # Delay between requests
-        time.sleep(random.uniform(1, 3))
+        # time.sleep(random.uniform(1, 3))
 
     return all_products
 
@@ -54,6 +54,10 @@ def main():
     num_pages = int(input("Enter the number of pages to scrape: "))
 
     print(f"Scraping data for '{search_term}' from {num_pages} pages...")
+
+    # Start timing
+    start_time = time.time()
+
     products = scrape_amazon(search_term, num_pages)
 
     if products:
@@ -61,7 +65,15 @@ def main():
         df = pd.DataFrame(products)
         csv_filename = f"amazon_{search_term.replace(' ', '_')}.csv"
         df.to_csv(csv_filename, index=False)
+
+        # End timing
+        end_time = time.time()
+
+        # Calculate duration
+        duration = end_time - start_time
+
         print(f"Data has been scraped and saved to {csv_filename}")
+        print(f"Time taken: {duration:.2f} seconds")
     else:
         print("No products found or there was an error during scraping.")
 

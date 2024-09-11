@@ -3,6 +3,7 @@ use scraper::{Html, Selector};
 use serde::Serialize;
 use std::fs::File;
 use std::io::{stdin, stdout, Write};
+use std::time::Instant;
 use tokio;
 
 #[derive(Debug, Serialize)]
@@ -26,6 +27,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let page_num: u32 = total_pages.parse().expect("Please enter a valid number");
 
     let print_output = readinputbool("Do you want to print the output (y/n): ");
+
+    let start = Instant::now();
+
     let mut products: Vec<Product> = Vec::new();
 
     for i in 1..(page_num + 1) {
@@ -128,7 +132,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         wtr.serialize(product)?;
     }
     match wtr.flush() {
-        Ok(_) => println!("Data written to file"),
+        Ok(_) => {
+            println!("Data written to file");
+            let duration = start.elapsed();
+            println!("Time elapsed: {:?}", duration);
+        }
         Err(e) => println!("Error writing to file: {}", e),
     };
 
