@@ -69,7 +69,7 @@ async fn fetch_page(
         let title = product
             .select(&sel.title)
             .next()
-            .map(|el| el.text().collect::<String>())
+            .and_then(|el| Some(el.text().collect::<String>().trim().to_string()))
             .unwrap_or_else(|| "N/A".to_string());
 
         let price = product
@@ -134,10 +134,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize selectors
     let selectors = Arc::new(Selectors {
         prod: Selector::parse("div[data-component-type='s-search-result']").unwrap(),
-        title: Selector::parse("h2 span.a-text-normal").unwrap(),
-        price: Selector::parse("span.a-price-whole").unwrap(),
+        title: Selector::parse("h2").unwrap(),
+        price: Selector::parse("span.a-price[data-a-size='xl'] span.a-price-whole").unwrap(),
         rating: Selector::parse("span.a-icon-alt").unwrap(),
-        review_count: Selector::parse("span.a-size-base").unwrap(),
+        review_count: Selector::parse("span.a-size-base.s-underline-text").unwrap(),
     });
 
     // Create tasks for each page
