@@ -69,7 +69,7 @@ async fn fetch_page(
         let title = product
             .select(&sel.title)
             .next()
-            .and_then(|el| Some(el.text().collect::<String>().trim().to_string()))
+            .map(|el| el.text().collect::<String>().trim().to_string())
             .unwrap_or_else(|| "N/A".to_string());
 
         let price = product
@@ -131,10 +131,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let start = Instant::now();
     let mut all_products = Vec::new();
 
-    // Initialize selectors
+    // In the Selectors struct initialization
     let selectors = Arc::new(Selectors {
         prod: Selector::parse("div[data-component-type='s-search-result']").unwrap(),
-        title: Selector::parse("h2").unwrap(),
+        title: Selector::parse("h2.a-size-base-plus").unwrap(), // Modified selector
         price: Selector::parse("span.a-price[data-a-size='xl'] span.a-price-whole").unwrap(),
         rating: Selector::parse("span.a-icon-alt").unwrap(),
         review_count: Selector::parse("span.a-size-base.s-underline-text").unwrap(),

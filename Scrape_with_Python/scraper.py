@@ -33,7 +33,7 @@ def scrape_amazon(search_term, num_pages=1):
 
         for product in products:
             # Extract product details
-            title = product.find('h2', {'class': 'a-size-mini a-spacing-none a-color-base s-line-clamp-2'})
+            title = product.find('h2', {'class': 'a-size-medium'}).find('span') if product.find('h2', {'class': 'a-size-medium'}) else None
             price = product.find('span', {'class': 'a-price-whole'})
             rating = product.find('span', {'class': 'a-icon-alt'})
             reviews = product.find('span', {'class': 'a-size-base'})
