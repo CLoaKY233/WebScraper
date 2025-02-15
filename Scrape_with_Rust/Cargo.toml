@@ -11,3 +11,4 @@ encoding_rs = "*"
 csv="*"
 serde = { version = "*", features = ["derive"] }
 futures = "*"
+surrealdb = "2.2.0"

@@ -1,12 +1,23 @@
 use futures::future::join_all;
 use reqwest::Client;
 use scraper::{Html, Selector};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{stdin, stdout, Write};
 use std::sync::Arc;
 use std::time::Instant;
+use surrealdb::engine::remote::ws::Wss;
+use surrealdb::opt::auth::Root;
+use surrealdb::sql::Thing;
+use surrealdb::Surreal;
 use tokio;
+
+// Define structures for database records and product information
+#[derive(Debug, Deserialize)]
+struct Record {
+    #[allow(dead_code)]
+    id: Thing,
+}
 
 // Struct to hold product information
 #[derive(Debug, Serialize)]
@@ -24,6 +35,51 @@ struct Selectors {
     price: Selector,
     rating: Selector,
     review_count: Selector,
+}
+
+// Add this constant at the top level of your code
+// const TABLE_NAME: &str = "products"; // Using plural form as a convention for table names
+
+// Then modify the save_data function to use this constant:
+async fn save_data(products: &Vec<Product>, table: &str) -> surrealdb::Result<()> {
+    let db = Surreal::new::<Wss>("cloakystores-06a9f7u3jlrsf43q77o8ttu1kk.aws-euw1.surreal.cloud")
+        .await?;
+
+    match db.use_ns("scraper").use_db("scraper").await {
+        Ok(_) => println!("Database selected"),
+        Err(e) => {
+            eprintln!("Failed to select database: {}", e);
+            return Err(e);
+        }
+    }
+
+    match db
+        .signin(Root {
+            username: "cloaky233b",
+            password: "timdp8989064485",
+        })
+        .await
+    {
+        Ok(_) => println!("Authentication successful"),
+        Err(e) => {
+            eprintln!("Authentication failed: {}", e);
+            return Err(e);
+        }
+    }
+
+    for product in products {
+        let _created: Option<Record> = db
+            .create(table) // Using the constant here
+            .content(Product {
+                title: product.title.clone(),
+                price: product.price,
+                rating: product.rating,
+                review_count: product.review_count,
+            })
+            .await?;
+    }
+
+    Ok(())
 }
 
 // Function to fetch and parse a single page
@@ -176,6 +232,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Write data to CSV file
     println!("Writing data to file");
+
     let mut prod_name = product_name.replace(" ", "_");
     prod_name = format!("{}.csv", prod_name);
     let file = File::create(prod_name)?;
@@ -189,6 +246,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     wtr.flush()?;
     println!("Data written to file");
+
+    println!("uploading to database");
+
+    let upload_res = save_data(&all_products, product_name.as_str()).await;
+    match upload_res {
+        Ok(_) => println!("Successfully uploaded to database"),
+        Err(e) => eprintln!("Failed to upload to database: {}", e),
+    }
 
     let duration = start.elapsed();
     println!("Time elapsed: {:?}", duration);
